@@ -239,7 +239,7 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
     });
     response.on('end', function () {
       console.timeEnd(`-- Renderly render - ${timestamp}`);
-      console.info(`-- Renderly response: ${response}`);
+      console.info(`-- Renderly response: ${content}`);
     });
   }).on('error', function (err) {
     console.error('-- Renderly render error --', err);;
