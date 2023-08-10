@@ -229,9 +229,10 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
 
   const timestamp = new Date().getTime();
   console.time(`-- Renderly render - ${timestamp}`);
+  console.log(`-- Renderly url: ${renderlyUrl}`);
   adapters[renderlyUrl.protocol].get(renderlyUrl, options, (response) => {
     console.info('-- Renderly response status and timing --');
-    console.info(`-- Renderly status: ${response.status}`);
+    console.info(`-- Renderly response: ${response}`);
     console.timeEnd(`-- Renderly render - ${timestamp}`);
   }).on('error', function (err) {
     callback(err);
