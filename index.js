@@ -231,9 +231,16 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
   console.time(`-- Renderly render - ${timestamp}`);
   console.log(`-- Renderly url: ${renderlyUrl}`);
   adapters[renderlyUrl.protocol].get(renderlyUrl, options, (response) => {
+    var content = '';
     console.info('-- Renderly response status and timing --');
-    console.info(`-- Renderly response: ${JSON.stringify(response)}`);
-    console.timeEnd(`-- Renderly render - ${timestamp}`);
+    
+    response.on('data', function (chunk) {
+      content += chunk;
+    });
+    response.on('end', function () {
+      console.timeEnd(`-- Renderly render - ${timestamp}`);
+      console.info(`-- Renderly response: ${response}`);
+    });
   }).on('error', function (err) {
     console.error('-- Renderly render error --', err);;
     console.timeEnd(`-- Renderly render - ${timestamp}`);
