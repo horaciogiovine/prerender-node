@@ -215,36 +215,36 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
 
   const timestampPrerender = new Date().getTime();
   // Dynamically use "http" or "https" module, since process.env.PRERENDER_SERVICE_URL can be set to http protocol
-  console.time(`-- prerender render - ${timestampPrerender}`);
-  adapters[prerenderUrl.protocol].get(prerenderUrl, options, (response) => {
+  console.time(`-- render - ${timestampPrerender}`);
+  adapters[renderlyUrl.protocol].get(renderlyUrl, options, (response) => {
     if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
       prerender.gunzipResponse(response, callback);
     } else {
       prerender.plainResponse(response, callback);
     }
-    console.timeEnd(`-- prerender render - ${timestampPrerender}`);
+    console.timeEnd(`-- render - ${timestampPrerender}`);
   }).on('error', function (err) {
     callback(err);
   });
 
-  const timestamp = new Date().getTime();
-  console.time(`-- Renderly render - ${timestamp}`);
-  console.log(`-- Renderly url: ${renderlyUrl}`);
-  adapters[renderlyUrl.protocol].get(renderlyUrl, options, (response) => {
-    var content = '';
-    console.info('-- Renderly response status and timing --');
+  // const timestamp = new Date().getTime();
+  // console.time(`-- Renderly render - ${timestamp}`);
+  // console.log(`-- Renderly url: ${renderlyUrl}`);
+  // adapters[renderlyUrl.protocol].get(renderlyUrl, options, (response) => {
+  //   var content = '';
+  //   console.info('-- Renderly response status and timing --');
     
-    response.on('data', function (chunk) {
-      content += chunk;
-    });
-    response.on('end', function () {
-      console.timeEnd(`-- Renderly render - ${timestamp}`);
-      console.info(`-- Renderly response: ${content}`);
-    });
-  }).on('error', function (err) {
-    console.error('-- Renderly render error --', err);;
-    console.timeEnd(`-- Renderly render - ${timestamp}`);
-  });
+  //   response.on('data', function (chunk) {
+  //     content += chunk;
+  //   });
+  //   response.on('end', function () {
+  //     console.timeEnd(`-- Renderly render - ${timestamp}`);
+  //     console.info(`-- Renderly response: ${content}`);
+  //   });
+  // }).on('error', function (err) {
+  //   console.error('-- Renderly render error --', err);;
+  //   console.timeEnd(`-- Renderly render - ${timestamp}`);
+  // });
 
 };
 
