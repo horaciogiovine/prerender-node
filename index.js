@@ -3,12 +3,12 @@ var http = require('http')
   , url = require('url')
   , zlib = require('zlib');
 
-const adapters = { 'http:': http, 'https:': https};
+const adapters = { 'http:': http, 'https:': https };
 
-var prerender = module.exports = function(req, res, next) {
-  if(!prerender.shouldShowPrerenderedPage(req)) return next();
+var prerender = module.exports = function (req, res, next) {
+  if (!prerender.shouldShowPrerenderedPage(req)) return next();
 
-  prerender.beforeRenderFn(req, function(err, cachedRender) {
+  prerender.beforeRenderFn(req, function (err, cachedRender) {
 
     if (!err && cachedRender) {
       if (typeof cachedRender == 'string') {
@@ -24,13 +24,13 @@ var prerender = module.exports = function(req, res, next) {
       }
     }
 
-    prerender.getPrerenderedPageResponse(req, function(err, prerenderedResponse){
+    prerender.getPrerenderedPageResponse(req, function (err, prerenderedResponse) {
       var options = prerender.afterRenderFn(err, req, prerenderedResponse);
       if (options && options.cancelRender) {
         return next();
       }
 
-      if(prerenderedResponse){
+      if (prerenderedResponse) {
         res.writeHead(prerenderedResponse.statusCode, prerenderedResponse.headers);
         return res.end(prerenderedResponse.body);
       } else {
@@ -132,53 +132,53 @@ prerender.extensionsToIgnore = [
 ];
 
 
-prerender.whitelisted = function(whitelist) {
+prerender.whitelisted = function (whitelist) {
   prerender.whitelist = typeof whitelist === 'string' ? [whitelist] : whitelist;
   return this;
 };
 
 
-prerender.blacklisted = function(blacklist) {
+prerender.blacklisted = function (blacklist) {
   prerender.blacklist = typeof blacklist === 'string' ? [blacklist] : blacklist;
   return this;
 };
 
 
-prerender.shouldShowPrerenderedPage = function(req) {
+prerender.shouldShowPrerenderedPage = function (req) {
   var userAgent = req.headers['user-agent']
     , bufferAgent = req.headers['x-bufferbot']
     , isRequestingPrerenderedPage = false;
 
-  if(!userAgent) return false;
-  if(req.method != 'GET' && req.method != 'HEAD') return false;
-  if(req.headers && req.headers['x-prerender']) return false;
+  if (!userAgent) return false;
+  if (req.method != 'GET' && req.method != 'HEAD') return false;
+  if (req.headers && req.headers['x-prerender']) return false;
 
   var parsedUrl = url.parse(req.url, true);
   //if it contains _escaped_fragment_, show prerendered page
   var parsedQuery = parsedUrl.query;
-  if(parsedQuery && parsedQuery['_escaped_fragment_'] !== undefined) isRequestingPrerenderedPage = true;
+  if (parsedQuery && parsedQuery['_escaped_fragment_'] !== undefined) isRequestingPrerenderedPage = true;
 
   //if it is a bot...show prerendered page
-  if(prerender.crawlerUserAgents.some(function(crawlerUserAgent){ return userAgent.toLowerCase().indexOf(crawlerUserAgent.toLowerCase()) !== -1;})) isRequestingPrerenderedPage = true;
+  if (prerender.crawlerUserAgents.some(function (crawlerUserAgent) { return userAgent.toLowerCase().indexOf(crawlerUserAgent.toLowerCase()) !== -1; })) isRequestingPrerenderedPage = true;
 
   //if it is BufferBot...show prerendered page
-  if(bufferAgent) isRequestingPrerenderedPage = true;
+  if (bufferAgent) isRequestingPrerenderedPage = true;
 
   //if it is a bot and is requesting a resource...dont prerender
   var parsedPathname = parsedUrl.pathname.toLowerCase();
-  if(prerender.extensionsToIgnore.some(function(extension){return parsedPathname.endsWith(extension)})) return false;
+  if (prerender.extensionsToIgnore.some(function (extension) { return parsedPathname.endsWith(extension) })) return false;
 
   //if it is a bot and not requesting a resource and is not whitelisted...dont prerender
-  if(Array.isArray(this.whitelist) && this.whitelist.every(function(whitelisted){return (new RegExp(whitelisted)).test(req.url) === false;})) return false;
+  if (Array.isArray(this.whitelist) && this.whitelist.every(function (whitelisted) { return (new RegExp(whitelisted)).test(req.url) === false; })) return false;
 
   //if it is a bot and not requesting a resource and is not blacklisted(url or referer)...dont prerender
-  if(Array.isArray(this.blacklist) && this.blacklist.some(function(blacklisted){
+  if (Array.isArray(this.blacklist) && this.blacklist.some(function (blacklisted) {
     var blacklistedUrl = false
       , blacklistedReferer = false
       , regex = new RegExp(blacklisted);
 
     blacklistedUrl = regex.test(req.url) === true;
-    if(req.headers['referer']) blacklistedReferer = regex.test(req.headers['referer']) === true;
+    if (req.headers['referer']) blacklistedReferer = regex.test(req.headers['referer']) === true;
 
     return blacklistedUrl || blacklistedReferer;
   })) return false;
@@ -189,13 +189,13 @@ prerender.shouldShowPrerenderedPage = function(req) {
 
 prerender.prerenderServerRequestOptions = {};
 
-prerender.getPrerenderedPageResponse = function(req, callback) {
+prerender.getPrerenderedPageResponse = function (req, callback) {
   var options = {
     headers: {}
   };
   for (var attrname in this.prerenderServerRequestOptions) { options[attrname] = this.prerenderServerRequestOptions[attrname]; }
   if (this.forwardHeaders === true) {
-    Object.keys(req.headers).forEach(function(h) {
+    Object.keys(req.headers).forEach(function (h) {
       // Forwarding the host header can cause issues with server platforms that require it to match the URL
       if (h == 'host') {
         return;
@@ -205,60 +205,80 @@ prerender.getPrerenderedPageResponse = function(req, callback) {
   }
   options.headers['User-Agent'] = req.headers['user-agent'];
   options.headers['Accept-Encoding'] = 'gzip';
-  if(this.prerenderToken || process.env.PRERENDER_TOKEN) {
+  if (this.prerenderToken || process.env.PRERENDER_TOKEN) {
     options.headers['X-Prerender-Token'] = this.prerenderToken || process.env.PRERENDER_TOKEN;
   }
 
-  const url = new URL(prerender.buildApiUrl(req));
+  const urls = prerender.buildApiUrl(req);
+  const prerenderUrl = new URL(urls[0]);
+  const renderlyUrl = new URL(urls[1]);
+
+  const timestampPrerender = new Date().getTime();
   // Dynamically use "http" or "https" module, since process.env.PRERENDER_SERVICE_URL can be set to http protocol
-  adapters[url.protocol].get(url, options, (response) => {
-    if(response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
+  console.time(`-- prerender render - ${timestampPrerender}`);
+  adapters[prerenderUrl.protocol].get(prerenderUrl, options, (response) => {
+    if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
       prerender.gunzipResponse(response, callback);
     } else {
       prerender.plainResponse(response, callback);
     }
-  }).on('error', function(err) {
+    console.timeEnd(`-- prerender render - ${timestampPrerender}`);
+  }).on('error', function (err) {
     callback(err);
+  });
+
+  const timestamp = new Date().getTime();
+  console.time(`-- Renderly render - ${timestamp}`);
+  adapters[renderlyUrl.protocol].get(renderlyUrl, options, (response) => {
+    console.info('-- Renderly response status and timing --');
+    console.info(`-- Renderly status: ${response.status}`);
+    console.timeEnd(`-- Renderly render - ${timestamp}`);
+  }).on('error', function (err) {
+    callback(err);
+    console.error('-- Renderly render error --', err);;
+    console.timeEnd(`-- Renderly render - ${timestamp}`);
   });
 
 };
 
-prerender.gunzipResponse = function(response, callback) {
+prerender.gunzipResponse = function (response, callback) {
   var gunzip = zlib.createGunzip()
     , content = '';
 
-  gunzip.on('data', function(chunk) {
+  gunzip.on('data', function (chunk) {
     content += chunk;
   });
-  gunzip.on('end', function() {
+  gunzip.on('end', function () {
     response.body = content;
     delete response.headers['content-encoding'];
     delete response.headers['content-length'];
     callback(null, response);
   });
-  gunzip.on('error', function(err){
+  gunzip.on('error', function (err) {
     callback(err);
   });
 
   response.pipe(gunzip);
 };
 
-prerender.plainResponse = function(response, callback) {
+prerender.plainResponse = function (response, callback) {
   var content = '';
 
-  response.on('data', function(chunk) {
+  response.on('data', function (chunk) {
     content += chunk;
   });
-  response.on('end', function() {
+  response.on('end', function () {
     response.body = content;
     callback(null, response);
   });
 };
 
-
-prerender.buildApiUrl = function(req) {
+prerender.buildApiUrl = function (req) {
   var prerenderUrl = prerender.getPrerenderServiceUrl();
+  var renderlyUrl = prerender.getRenderlyServiceUrl();
+
   var forwardSlash = prerenderUrl.indexOf('/', prerenderUrl.length - 1) !== -1 ? '' : '/';
+  var renderlyForwardSlash = renderlyUrl.indexOf('/', renderlyUrl.length - 1) !== -1 ? '' : '/';
 
   var protocol = req.connection.encrypted ? "https" : "http";
   if (req.headers['cf-visitor']) {
@@ -272,28 +292,35 @@ prerender.buildApiUrl = function(req) {
     protocol = this.protocol;
   }
   var fullUrl = protocol + "://" + (this.host || req.headers['x-forwarded-host'] || req.headers['host']) + req.url;
-  return prerenderUrl + forwardSlash + fullUrl;
+  return {
+    prerender: prerenderUrl + forwardSlash + fullUrl,
+    renderly: renderlyUrl + renderlyForwardSlash + fullUrl,
+  }
 };
 
-prerender.getPrerenderServiceUrl = function() {
+prerender.getPrerenderServiceUrl = function () {
   return this.prerenderServiceUrl || process.env.PRERENDER_SERVICE_URL || 'https://service.prerender.io/';
 };
 
-prerender.beforeRenderFn = function(req, done) {
+prerender.getRenderlyServiceUrl = function () {
+  return this.prerenderServiceUrl || process.env.RENDERLY_SERVICE_URL || 'https://hyp-rendertron.herokuapp.com/render/';
+};
+
+prerender.beforeRenderFn = function (req, done) {
   if (!this.beforeRender) return done();
 
   return this.beforeRender(req, done);
 };
 
 
-prerender.afterRenderFn = function(err, req, prerender_res) {
+prerender.afterRenderFn = function (err, req, prerender_res) {
   if (!this.afterRender) return;
 
   return this.afterRender(err, req, prerender_res);
 };
 
 
-prerender.set = function(name, value) {
+prerender.set = function (name, value) {
   this[name] = value;
   return this;
 };
