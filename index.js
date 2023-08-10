@@ -210,8 +210,8 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
   }
 
   const urls = prerender.buildApiUrl(req);
-  const prerenderUrl = new URL(urls[0]);
-  const renderlyUrl = new URL(urls[1]);
+  const prerenderUrl = new URL(urls.prerender);
+  const renderlyUrl = new URL(urls.renderly);
 
   const timestampPrerender = new Date().getTime();
   // Dynamically use "http" or "https" module, since process.env.PRERENDER_SERVICE_URL can be set to http protocol
