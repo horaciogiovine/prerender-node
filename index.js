@@ -232,10 +232,9 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
   console.log(`-- Renderly url: ${renderlyUrl}`);
   adapters[renderlyUrl.protocol].get(renderlyUrl, options, (response) => {
     console.info('-- Renderly response status and timing --');
-    console.info(`-- Renderly response: ${response}`);
+    console.info(`-- Renderly response: ${JSON.stringify(response)}`);
     console.timeEnd(`-- Renderly render - ${timestamp}`);
   }).on('error', function (err) {
-    callback(err);
     console.error('-- Renderly render error --', err);;
     console.timeEnd(`-- Renderly render - ${timestamp}`);
   });
