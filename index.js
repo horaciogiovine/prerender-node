@@ -241,7 +241,6 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
       console.timeEnd(`-- Renderly render - ${timestamp}`);
     });
   }).on('error', function (err) {
-    console.error('-- Renderly render error --', err);
     console.timeEnd(`-- Renderly render - ${timestamp}`);
   });
 };
@@ -308,7 +307,7 @@ prerender.getPrerenderServiceUrl = function () {
 };
 
 prerender.getRenderlyServiceUrl = function () {
-  return this.prerenderServiceUrl || process.env.RENDERLY_SERVICE_URL || 'https://hyp-rendertron.herokuapp.com/render/';
+  return this.renderlyServiceUrl || process.env.RENDERLY_SERVICE_URL || '';
 };
 
 prerender.beforeRenderFn = function (req, done) {
