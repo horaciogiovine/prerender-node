@@ -217,11 +217,11 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
   // Dynamically use "http" or "https" module, since process.env.PRERENDER_SERVICE_URL can be set to http protocol
   console.time(`-- render - ${timestampPrerender}`);
   adapters[prerenderUrl.protocol].get(prerenderUrl, options, (response) => {
-    // if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
-    //   prerender.gunzipResponse(response, callback);
-    // } else {
-    //   prerender.plainResponse(response, callback);
-    // }
+    if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
+      prerender.gunzipResponse(response, callback);
+    } else {
+      prerender.plainResponse(response, callback);
+    }
     console.timeEnd(`-- render - ${timestampPrerender}`);
   }).on('error', function (err) {
     callback(err);
@@ -234,18 +234,12 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
     var content = '';
     console.info('-- Renderly response status and timing --');
     
-    // response.on('data', function (chunk) {
-    //   content += chunk;
-    // });
-    // response.on('end', function () {
-    //   console.timeEnd(`-- Renderly render - ${timestamp}`);
-    // });
-
-    if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
-      prerender.gunzipResponse(response, callback);
-    } else {
-      prerender.plainResponse(response, callback);
-    }
+    response.on('data', function (chunk) {
+      content += chunk;
+    });
+    response.on('end', function () {
+      console.timeEnd(`-- Renderly render - ${timestamp}`);
+    });
   }).on('error', function (err) {
     console.timeEnd(`-- Renderly render - ${timestamp}`);
   });
