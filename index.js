@@ -217,13 +217,16 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
   // Dynamically use "http" or "https" module, since process.env.PRERENDER_SERVICE_URL can be set to http protocol
   console.time(`-- render - ${timestampPrerender}`);
   adapters[prerenderUrl.protocol].get(prerenderUrl, options, (response) => {
-    // if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
-    //   prerender.gunzipResponse(response, callback);
-    // } else {
-    //   prerender.plainResponse(response, callback);
-    // }
+    if (process.env.PRERENDER_ENGINE === 'prerender' || !process.env.PRERENDER_ENGINE) {
+      if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
+        prerender.gunzipResponse(response, callback);
+      } else {
+        prerender.plainResponse(response, callback);
+      }
+    }
     console.timeEnd(`-- render - ${timestampPrerender}`);
   }).on('error', function (err) {
+    console.timeEnd(`-- render - ${timestampPrerender}`);
     callback(err);
   });
 
@@ -231,20 +234,22 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
   console.time(`-- Renderly render - ${timestamp}`);
   console.log(`-- Renderly url: ${renderlyUrl}`);
   adapters[renderlyUrl.protocol].get(renderlyUrl, options, (response) => {
-    var content = '';
-    console.info('-- Renderly response status and timing --');
-    
-    // response.on('data', function (chunk) {
-    //   content += chunk;
-    // });
-    // response.on('end', function () {
-    //   console.timeEnd(`-- Renderly render - ${timestamp}`);
-    // });
-
-    if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
-      prerender.gunzipResponse(response, callback);
+    if (process.env.PRERENDER_ENGINE === 'renderly') {
+      if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
+        prerender.gunzipResponse(response, callback);
+      } else {
+        prerender.plainResponse(response, callback);
+      }
     } else {
-      prerender.plainResponse(response, callback);
+      var content = '';
+      console.info('-- Renderly response status and timing --');
+
+      response.on('data', function (chunk) {
+        content += chunk;
+      });
+      response.on('end', function () {
+        console.timeEnd(`-- Renderly render - ${timestamp}`);
+      });
     }
   }).on('error', function (err) {
     console.timeEnd(`-- Renderly render - ${timestamp}`);
