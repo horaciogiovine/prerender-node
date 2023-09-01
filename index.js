@@ -215,7 +215,6 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
 
   const timestampPrerender = new Date().getTime();
   // Dynamically use "http" or "https" module, since process.env.PRERENDER_SERVICE_URL can be set to http protocol
-  console.time(`-- render - ${timestampPrerender}`);
   adapters[prerenderUrl.protocol].get(prerenderUrl, options, (response) => {
     if (process.env.PRERENDER_ENGINE === 'prerender' || !process.env.PRERENDER_ENGINE) {
       if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
@@ -224,9 +223,7 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
         prerender.plainResponse(response, callback);
       }
     }
-    console.timeEnd(`-- render - ${timestampPrerender}`);
   }).on('error', function (err) {
-    console.timeEnd(`-- render - ${timestampPrerender}`);
     callback(err);
   });
 
@@ -242,8 +239,7 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
       }
     } else {
       var content = '';
-      console.info('-- Renderly response status and timing --');
-
+      
       response.on('data', function (chunk) {
         content += chunk;
       });
