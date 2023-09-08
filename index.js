@@ -303,6 +303,12 @@ prerender.buildApiUrl = function (req) {
     protocol = this.protocol;
   }
   var fullUrl = protocol + "://" + (this.host || req.headers['x-forwarded-host'] || req.headers['host']) + req.url;
+
+  console.log({
+    prerender: prerenderUrl + forwardSlash + fullUrl,
+    renderly: renderlyUrl + renderlyForwardSlash + fullUrl,
+  });
+  
   return {
     prerender: prerenderUrl + forwardSlash + fullUrl,
     renderly: renderlyUrl + renderlyForwardSlash + fullUrl,
