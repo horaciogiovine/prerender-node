@@ -211,7 +211,7 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
 
   const urls = prerender.buildApiUrl(req);
   const prerenderUrl = new URL(urls.prerender);
-  const renderlyUrl = new URL(urls.renderly);
+  let renderlyUrl;
 
   const timestampPrerender = new Date().getTime();
   // Dynamically use "http" or "https" module, since process.env.PRERENDER_SERVICE_URL can be set to http protocol
@@ -227,29 +227,30 @@ prerender.getPrerenderedPageResponse = function (req, callback) {
     callback(err);
   });
 
-  const timestamp = new Date().getTime();
-  console.time(`-- Renderly render - ${timestamp}`);
-  console.log(`-- Renderly url: ${renderlyUrl}`);
-  adapters[renderlyUrl.protocol].get(renderlyUrl, options, (response) => {
-    if (process.env.PRERENDER_ENGINE === 'renderly') {
-      if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
-        prerender.gunzipResponse(response, callback);
+  try {
+    renderlyUrl = new URL(urls.renderly);
+
+    const timestamp = new Date().getTime();
+    console.time(`-- Renderly render - ${timestamp}`);
+    console.log(`-- Renderly url: ${renderlyUrl}`);
+    adapters[renderlyUrl.protocol].get(renderlyUrl, options, (response) => {
+      if (process.env.PRERENDER_ENGINE === 'renderly') {
+        if (response.headers['content-encoding'] && response.headers['content-encoding'] === 'gzip') {
+          prerender.gunzipResponse(response, callback);
+        } else {
+          prerender.plainResponse(response, callback);
+        }
       } else {
-        prerender.plainResponse(response, callback);
+        response.on('end', function () {
+          console.timeEnd(`-- Renderly render - ${timestamp}`);
+        });
       }
-    } else {
-      var content = '';
-      
-      response.on('data', function (chunk) {
-        content += chunk;
-      });
-      response.on('end', function () {
-        console.timeEnd(`-- Renderly render - ${timestamp}`);
-      });
-    }
-  }).on('error', function (err) {
-    console.timeEnd(`-- Renderly render - ${timestamp}`);
-  });
+    }).on('error', function (err) {
+      console.timeEnd(`-- Renderly render - ${timestamp}`);
+    });
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 prerender.gunzipResponse = function (response, callback) {
@@ -308,7 +309,7 @@ prerender.buildApiUrl = function (req) {
     prerender: prerenderUrl + forwardSlash + fullUrl,
     renderly: renderlyUrl + renderlyForwardSlash + fullUrl,
   });
-  
+
   return {
     prerender: prerenderUrl + forwardSlash + fullUrl,
     renderly: renderlyUrl + renderlyForwardSlash + fullUrl,
